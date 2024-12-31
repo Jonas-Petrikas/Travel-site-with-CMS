@@ -66,7 +66,7 @@ app.post('/admin/page-top', (req, res) => {
 
     fs.writeFileSync('./data/main-top.json', mainTopData);
 
-    res.redirect(URL + 'admin/page-top');
+    res.redirect('../admin/page-top');
 
 });
 
