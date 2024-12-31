@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="{{url}}back.style.css">
+    <link rel="stylesheet" href="../back.style.css">
     <title>{{pageTitle}}</title>
 </head>
 
@@ -14,13 +14,13 @@
             <div class="col">
                 <ul class="nav">
                     <li class="nav-item">
-                        <a class="nav-link active" aria-current="page" href="{{url}}admin">Pradinis</a>
+                        <a class="nav-link active" aria-current="page" href="../admin">Pradinis</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{url}}admin/page-top">Pirmo puslapio viršus</a>
+                        <a class="nav-link" href="../admin/page-top">Pirmo puslapio viršus</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{url}}admin/page-list">Pirmo puslapio sąrašas</a>
+                        <a class="nav-link disabled" href="../admin/page-list">Pirmo puslapio sąrašas</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link disabled" aria-disabled="true">Disabled</a>
