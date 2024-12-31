@@ -4,7 +4,7 @@ const fs = require('fs');
 const bodyParser = require('body-parser');
 const handlebars = require('handlebars');
 // const URL = 'http://localhost:3000/'
-const URL2 = 'https://travel-site-with-cms.onrender.com/'
+const URL = 'https://travel-site-with-cms.onrender.com/' //atsikeisti
 
 
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -12,7 +12,7 @@ app.use(express.static('public'));
 
 const makeHtml = (data, page, back = true) => {
     const dir = back ? 'back' : 'front';
-    data.url = URL2;
+    data.url = URL;
     const topHtml = fs.readFileSync(`./templates/${dir}/top.hbr`, 'utf8');
     const bottomHtml = fs.readFileSync(`./templates/${dir}/bottom.hbr`, 'utf8');
     const pageHtml = fs.readFileSync(`./templates/${dir}/${page}.hbr`, 'utf8');
@@ -67,7 +67,7 @@ app.post('/admin/page-top', (req, res) => {
 
     fs.writeFileSync('./data/main-top.json', mainTopData);
 
-    res.redirect('../admin/page-top');
+    res.redirect(URL + '../admin/page-top');
 
 });
 
