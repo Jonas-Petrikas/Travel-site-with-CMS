@@ -4,3 +4,4 @@ if (document.querySelector('[data-msg]')) {
         msg.remove();
     }, 3000);
 }
+
