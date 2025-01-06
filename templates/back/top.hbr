@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="{{url}}back.app.js" defer></script>
     <link rel="stylesheet" href="../back.style.css">
     <title>{{pageTitle}}</title>
 </head>
@@ -32,7 +33,7 @@
     </div>
 
     {{#if message}}
-    <div class="container mt-5">
+    <div class="container mt-5" data-msg>
         <div class="row">
             <div class="col-4"></div>
             <div class="col-4">
