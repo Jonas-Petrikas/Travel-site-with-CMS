@@ -20,17 +20,17 @@
     <header>
         <nav>
             <div class="logo">
-                <a href="http://localhost:3000">
+                <a href="{{url}}">
                     <img src="./images/logo.webp" alt="logo">
                 </a>
             </div>
             <ul>
-                <li><a href="http://localhost:3000">Home</a></li>
-                <li><a href="http://localhost:3000/about">About</a></li>
-                <li><a href="http://localhost:3000/contact">Contact</a></li>
+                <li><a href="{{url}}">Home</a></li>
+                <li><a href="{{url}}about">About</a></li>
+                <li><a href="{{url}}contact">Contact</a></li>
             </ul>
             <div class="login">
-                <a href="http://localhost:3000/login">Login</a>
+                <a href="{{url}}login">Login</a>
             </div>
         </nav>
     </header>

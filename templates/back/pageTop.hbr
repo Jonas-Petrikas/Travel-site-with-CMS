@@ -1,7 +1,6 @@
 <div class="container">
     <div class="row">
         <div class="col-2">
-
         </div>
         <div class="col-8">
             <div class="card mt-5">
@@ -9,13 +8,13 @@
                     <h1>Pagrindinio puslapio viršus</h1>
                 </div>
                 <div class="card-body">
-                    <h5 class="card-title">Čia galite readaguoti pagrindinio puslapio pavadinimus, tekstus ir
+                    <h5 class="card-title">Čia galite redaguoti pagrindinio puslapio pavadinimus, tekstus ir
                         paveiksliuką</h5>
-                    <form class="mt-5" action="{{url}}admin/page-top" method="post">
+                    <form class="mt-5" action="{{url}}admin/page-top" method="post" enctype="multipart/form-data">
                         <div class="mb-3">
                             <label class="form-label">Puslapio pagrindinis pavadinimas</label>
                             <input type="text" class="form-control" name="main_title"
-                                value="{{mainTopData.main_title}}">
+                                value="{{#if (isdefined oldData.main_title)}}{{oldData.main_title}}{{else}}{{mainTopData.main_title}}{{/if}}">
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Puslapio sub pavadinimas</label>
@@ -26,14 +25,31 @@
                             <textarea class="form-control" name="page_text"
                                 rows="10">{{mainTopData.page_text}}</textarea>
                         </div>
+                        <div class="mb-3 with-img">
+                            <div class="form-bin">
+                                <label for="formFile" class="form-label">Paveiksliukas</label>
+                                <input class="form-control" type="file" id="formFile" name="top_image">
+                            </div>
+                            <div class="img-bin">
+                                {{#if mainTopData.top_image}}
+                                <img src="{{url}}images/{{mainTopData.top_image}}" alt="hero">
+                                {{else}}
+                                <img src="{{url}}images/no-image.jpg" alt="hero">
+                                {{/if}}
+                            </div>
+                        </div>
+
 
                         <button type="submit" class="btn btn-primary">Išsaugoti</button>
                     </form>
+
+
+
+
                 </div>
             </div>
         </div>
         <div class="col-2">
-
         </div>
     </div>
 </div>

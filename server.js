@@ -3,12 +3,30 @@ const app = express();
 const fs = require('fs');
 const bodyParser = require('body-parser');
 const handlebars = require('handlebars');
+const multer = require('multer'); //apdoroja requestą, kai yra paveiksliukas
+
+
+handlebars.registerHelper('isdefined', function (value) {
+    return value !== undefined && value !== null;
+});
+
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, './public/images/');
+    },
+    filename: function (req, file, cb) {
+        const randomName = uuidv4();
+        const extension = file.originalname.split('.').pop();
+        const filename = `${randomName}.${extension}`;
+        cb(null, filename);
+    }
+});
+
+
+
 const cookieParser = require('cookie-parser');
 const { v4: uuidv4 } = require('uuid');
 const md5 = require('md5');
-
-
-
 const URL = 'http://localhost:3000/'
 // const URL = 'https://travel-site-with-cms.onrender.com/' //atsikeisti
 
@@ -83,13 +101,61 @@ const messagesMiddleware = (req, res, next) => {
     next();
 };
 
+//Old data middleware
+const oldDataMiddleware = (req, res, next) => {
+    if (req.method === 'POST') {
+        const oldData = req.body;
+        updateSession(req, 'oldData', oldData);
+    }
+    if (req.method === 'GET') {
+        updateSession(req, 'oldData', null);
+    }
+    next();
+};
+//Auth middleware
+const auth = (req, res, next) => {
+
+    const isAdmin = req.url.includes('/admin');
+
+    if (!isAdmin) {
+        next();
+        return;
+    }
+
+    if (req.user?.user?.role === 'admin' || req.user?.user?.role === 'editor') {
+        next();
+
+    } else {
+        res.redirect(URL + 'login');
+        return;
+    }
+
+}
+
+//upload kreivas middleware
+
+const upload = multer({
+    storage: storage,
+    fileFilter: function (req, file, cb) {
+        if (file.mimetype !== 'image/jpeg' && file.mimetype !== 'image/png' && file.mimetype !== 'image/webp') {
+            cb(null, false);
+            req.fileValidationError = true;
+        } else {
+            cb(null, true);
+        }
+    }
+});
+
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static('public'));
 app.use(cookieParser());
+app.use(upload.single('top_image'));
 app.use(cookieMiddleware);
 app.use(sessionMiddleware);
 app.use(messagesMiddleware);
+app.use(oldDataMiddleware);
+app.use(auth);
 
 //Routes
 
@@ -115,11 +181,13 @@ app.get('/admin/list/create', (req, res) => {
 
     const data = {
         pageTitle: 'Pridėti naują įrašą',
-        message: req.user.message || null
+        message: req.user.message || null,
+        oldData: req.user.oldData || null
     };
 
     const html = makeHtml(data, 'create');
     res.send(html);
+
 
 });
 
@@ -128,6 +196,12 @@ app.get('/admin/list/create', (req, res) => {
 app.post('/admin/list/store', (req, res) => {
 
     const { title, text } = req.body;
+    if (!title || !text) {
+        updateSession(req, 'message', { text: 'Užpildykite visus laukus', type: 'danger' });
+        res.redirect(URL + 'admin/list/create/');
+        return;
+    }
+
     const id = uuidv4();
 
     let list = fs.readFileSync('./data/list.json', 'utf8');
@@ -161,6 +235,7 @@ app.get('/admin/list/edit/:id', (req, res) => {
             pageTitle: 'Puslapis nerastas',
             noMenu: true,
             metaRedirect: true,
+
         };
         const html = makeHtml(data, '404');
         res.status(404).send(html);
@@ -170,11 +245,112 @@ app.get('/admin/list/edit/:id', (req, res) => {
     const data = {
         pageTitle: 'Redaguoti įrašą',
         item,
-        message: req.user.message || null
+        message: req.user.message || null,
+        oldData: req.user.oldData || null
     };
 
     const html = makeHtml(data, 'edit');
     res.send(html);
+
+});
+
+//SHOW
+app.get('/admin/list/show/:id', (req, res) => {
+
+    let list = fs.readFileSync('./data/list.json', 'utf8');
+    list = JSON.parse(list);
+
+    const item = list.find(i => i.id === req.params.id);
+
+    if (!item) {
+        const data = {
+            pageTitle: 'Puslapis nerastas',
+            noMenu: true,
+            metaRedirect: true,
+
+        };
+        const html = makeHtml(data, '404');
+        res.status(404).send(html);
+        return;
+    }
+
+    const lettersInText = item.text.length;
+
+    const data = {
+        pageTitle: 'Peržiūrėti įrašą',
+        item,
+        lettersInText,
+        message: req.user.message || null,
+    };
+
+    const html = makeHtml(data, 'show');
+    res.send(html);
+
+});
+
+app.post('/admin/list/sort', (req, res) => {
+
+    const order = req.body.order;
+    let list = fs.readFileSync('./data/list.json', 'utf8');
+    list = JSON.parse(list);
+
+    //sort list by order
+    list.sort((a, b) => {
+        return order.indexOf(a.id) - order.indexOf(b.id);
+    });
+
+    list = JSON.stringify(list);
+    fs.writeFileSync('./data/list.json', list);
+
+    updateSession(req, 'message', { text: 'Sąrašas atnaujintas', type: 'success' });
+
+    res.redirect(URL + 'admin/list');
+
+});
+//DELETE
+app.get('/admin/list/delete/:id', (req, res) => {
+
+    let list = fs.readFileSync('./data/list.json', 'utf8');
+    list = JSON.parse(list);
+
+    const item = list.find(i => i.id === req.params.id);
+
+    if (!item) {
+        const data = {
+            pageTitle: 'Puslapis nerastas',
+            noMenu: true,
+            metaRedirect: true,
+        };
+        const html = makeHtml(data, '404');
+        res.status(404).send(html);
+        return;
+    }
+
+    const data = {
+        pageTitle: 'Patvirtinimas',
+        item,
+        noMenu: true,
+
+    };
+
+    const html = makeHtml(data, 'delete');
+    res.send(html);
+});
+
+//DESTROY
+app.post('/admin/list/destroy/:id', (req, res) => {
+
+    let list = fs.readFileSync('./data/list.json', 'utf8');
+    list = JSON.parse(list);
+
+    list = list.filter(i => i.id !== req.params.id);
+
+    list = JSON.stringify(list);
+    fs.writeFileSync('./data/list.json', list);
+
+    updateSession(req, 'message', { text: 'Įrašas ištrintas', type: 'success' });
+
+    res.redirect(URL + 'admin/list');
 
 });
 
@@ -241,6 +417,8 @@ app.get('/admin/page-top', (req, res) => {
     mainTopData = JSON.parse(mainTopData);
 
 
+
+
     const data = {
         pageTitle: 'Pagrindinio puslapio viršus',
         mainTopData,
@@ -258,10 +436,29 @@ app.post('/admin/page-top', (req, res) => {
     const { main_title, sub_title, page_text } = req.body;
     // will be validated later
 
-    let mainTopData = {
+    if (req.fileValidationError) {
+        updateSession(req, 'message', { text: 'Netinkamas paveiksliukas', type: 'danger' });
+        res.redirect(URL + 'admin/page-top');
+        return;
+    }
+
+
+    let mainTopData = fs.readFileSync('./data/main-top.json', 'utf8');
+    mainTopData = JSON.parse(mainTopData);
+    let fileName = req.file?.filename; //? - jeigu nera failo, nekils klaida
+    if (!fileName) {
+        fileName = mainTopData.top_image;
+    } else {
+        if (mainTopData.top_image) {
+            fs.unlinkSync('./public/images/' + mainTopData.top_image);
+        }
+    }
+
+    mainTopData = {
         main_title,
         sub_title,
         page_text,
+        top_image: fileName,
     };
 
     mainTopData = JSON.stringify(mainTopData);
@@ -274,14 +471,48 @@ app.post('/admin/page-top', (req, res) => {
 
 });
 
+//LOGIN
+app.get('/login', (req, res) => {
+    const data = {
+        pageTitle: 'Prisijungimas',
+        message: req.user.message || null,
+        oldData: req.user.oldData || null,
+        noMenu: true,
+    };
+    const html = makeHtml(data, 'login');
+    res.send(html);
+});
+
+app.post('/login', (req, res) => {
+    const { name, psw } = req.body;
+    let users = fs.readFileSync('./data/users.json', 'utf8');
+    users = JSON.parse(users);
+    const user = users.find(u => u.name === name && u.psw === md5(psw));
+    if (!user) {
+        updateSession(req, 'message', { text: 'Neteisingi prisijungimo duomenys', type: 'danger' });
+        res.redirect(URL + 'login');
+        return;
+    }
+    updateSession(req, 'message', { text: 'Sėkmingai prisijungta', type: 'success' });
+    updateSession(req, 'user', user);
+    res.redirect(URL + 'admin');
+});
+
+
+
+
 app.get('/', (req, res) => {
     let mainTopData = fs.readFileSync('./data/main-top.json', 'utf8');
     mainTopData = JSON.parse(mainTopData);
 
+    let list = fs.readFileSync('./data/list.json', 'utf8');
+    list = JSON.parse(list);
+
     const data = {
         pageTitle: 'First page',
         mainTopData,
-        message: req.user.message || null
+        message: req.user.message || null,
+        list
     };
 
     mainTopData.page_text = mainTopData.page_text.split('\n');
